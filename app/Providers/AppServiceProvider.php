@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
+use App\Policies\UserPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +27,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // JsonResource::withoutWrapping();
+
+        Gate::define('create-user', [UserPolicy::class, 'create']);
+        // Gate::define('create-user', function ($user) {
+        //     return $user->hasRole('ADMIN') || $user->hasRole('MANAGER');
+        // });
     }
 }
