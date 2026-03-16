@@ -2,25 +2,88 @@
 
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\User;
 
 describe('Product', function () {
     uses(RefreshDatabase::class);
 
     it('should fail to create a Product with missing name', function () {
-        expect(fn() => Product::create(['amount' => 1]))
-            ->toThrow(\Illuminate\Database\QueryException::class);
+        $user = User::factory()->create(['role' => 'ADMIN']);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'amount' => 10,
+            ]);
+
+        $response->assertUnprocessable();
     });
 
     it('should fail to create a Product with missing amount', function () {
-        expect(fn() => Product::create(['name' => 'test_product']))
-            ->toThrow(\Illuminate\Database\QueryException::class);
+        $user = User::factory()->create(['role' => 'ADMIN']);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'name' => 'test_product',
+            ]);
+
+        $response->assertUnprocessable();
     });
 
-    it('should create a Product successfully', function () {
-        $product = Product::create(['name' => 'test_product', 'amount' => 10]);
+    it('should create a Product successfully as admin', function () {
+        $user = User::factory()->create(['role' => 'ADMIN']);
 
-        expect($product)->toBeInstanceOf(Product::class);
-        expect($product->name)->toBe('test_product');
-        expect($product->amount)->toBe(10);
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'name' => 'test_product',
+                'amount' => 10,
+            ]);
+
+        $response->assertCreated();
+        expect(Product::where('name', 'test_product')->exists())->toBeTrue();
+    });
+
+    it('should create a Product successfully as manager', function () {
+        $user = User::factory()->create(['role' => 'MANAGER']);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'name' => 'test_product',
+                'amount' => 10,
+            ]);
+
+        $response->assertCreated();
+        expect(Product::where('name', 'test_product')->exists())->toBeTrue();
+    });
+
+    it('should fail to create a Product as finance', function () {
+        $user = User::factory()->create(['role' => 'FINANCE']);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'name' => 'test_product',
+                'amount' => 10,
+            ]);
+
+        $response->assertCreated();
+        expect(Product::where('name', 'test_product')->exists())->toBeTrue();
+    });
+
+    it('should fail to create a Product as regular user', function () {
+        $user = User::factory()->create(['role' => 'USER']);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/product', [
+                'name' => 'test_product',
+                'amount' => 10,
+            ]);
+
+        $response->assertForbidden();
+        expect(Product::where('name', 'test_product')->exists())->toBeFalse();
     });
 });
