@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of the resource.
      */
@@ -21,6 +23,8 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Product::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'amount' => 'required|integer|min:1'
@@ -36,7 +40,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        return ProductResource::make($product);
     }
 
     /**
@@ -44,7 +48,16 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        //
+        $this->authorize('update', Product::class);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'amount' => 'sometimes|required|integer|min:1'
+        ]);
+
+        $product->update($validated);
+
+        return new ProductResource($product);
     }
 
     /**
@@ -52,6 +65,8 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        $this->authorize('delete', Product::class);
+
         $product->delete();
 
         return response()->noContent();
