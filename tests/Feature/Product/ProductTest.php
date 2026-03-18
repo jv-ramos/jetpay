@@ -104,4 +104,13 @@ describe('Product', function () {
         $response->assertNoContent();
         expect(Product::find($product->id))->toBeNull();
     });
+
+    it('should belong to many transactions', function () {
+        $product = Product::create([
+            'name' => 'test_product',
+            'amount' => 10,
+        ]);
+
+        expect($product->transactions())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+    });
 });
