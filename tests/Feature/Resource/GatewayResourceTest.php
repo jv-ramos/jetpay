@@ -1,6 +1,5 @@
 <?php
 
-
 use App\Http\Resources\GatewayResource;
 use App\Models\Gateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
