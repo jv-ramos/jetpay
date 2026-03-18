@@ -10,4 +10,9 @@ class Product extends Model
         'name',
         'amount',
     ];
+
+    public function transactions()
+    {
+        return $this->belongsToMany(Transaction::class)->withPivot('quantity')->withTimestamps();
+    }
 }
