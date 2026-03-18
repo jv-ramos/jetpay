@@ -22,4 +22,12 @@ describe('Client', function () {
         expect(fn() => Client::create(['name' => 'client_test2', 'email' => 'client@example.com']))
             ->toThrow(\Illuminate\Database\QueryException::class);
     });
+
+    it('should index Clients', function () {
+        Client::create(['name' => 'client_test1', 'email' => 'client@example.com']);
+
+        $response = $this->get('/api/clients');
+        $response->assertStatus(200);
+        expect($response->json('data'))->toHaveCount(1);
+    });
 });
