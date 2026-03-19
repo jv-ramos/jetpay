@@ -48,6 +48,6 @@ Route::patch('gateways/{gateway}/priority', [GatewayController::class, 'updatePr
  */
 
 Route::apiResource('/transactions', TransactionController::class)->only('index', 'store', 'show');
-Route::post("/transactions/{id}/refund", [TransactionController::class, 'refund']);
+Route::middleware('auth:sanctum')->post("/transactions/{id}/refund", [TransactionController::class, 'refund']);
 
 require __DIR__ . '/auth.php';

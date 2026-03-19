@@ -8,9 +8,11 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Services\Gateway\GatewayFactory;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TransactionController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of the resource.
      */
@@ -81,6 +83,8 @@ class TransactionController extends Controller
      */
     public function refund(string $id)
     {
+        $this->authorize('refund', Transaction::class);
+
         $transaction = Transaction::findOrFail($id);
 
         if ($transaction->status === 'charged_back') {
