@@ -92,7 +92,7 @@ class TransactionController extends Controller
         }
 
         $gatewayService = GatewayFactory::make($transaction->gateway);
-        $gatewayResponse = $gatewayService->refund($transaction->external_id);
+        $gatewayResponse = $gatewayService->refund($transaction);
 
         $transaction->update(['status' => $gatewayResponse['status']]);
 

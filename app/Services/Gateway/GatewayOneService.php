@@ -2,24 +2,29 @@
 
 namespace App\Services\Gateway;
 
+use App\Models\Transaction;
 use App\Services\Gateway\GatewayInterface;
-use Illuminate\Support\Facades\Http;
 
 class GatewayOneService implements GatewayInterface
 {
-    private string $baseUrl = 'http://localhost:3001';
-
+    public function __construct(
+        private GatewayRequestService $requestService
+    ) {}
     /*
      * AUTHENTICATION
      */
     private function getToken(): string
     {
-        $response = Http::post("{$this->baseUrl}/login", [
+        $credentials = [
             'email' => 'dev@betalent.tech',
             'token' => 'FEC9BB078BF338F464F96B48089EB498',
-        ]);
+        ];
 
-        return $response->json('token');
+        $response = $this->requestService
+            ->post()
+            ->send('/login', $credentials);
+
+        return $response['token'];
     }
     /*
      * CREATE A NEW CLASS INSTANCE.
@@ -27,22 +32,26 @@ class GatewayOneService implements GatewayInterface
     public function createTransaction(array $data): array
     {
         $token = $this->getToken();
-        $makeTransaction = Http::withToken($token)
-            ->post("{$this->baseUrl}/transactions", [
-                'amount' => $data['amount'],
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'cardNumber' => $data['card_number'],
-                'cvv' => $data['cvv'],
-            ]);
-        // logger($makeTransaction->json());
-        $externalId = $makeTransaction->json('id');
-        // logger('external_id: ' . $externalId);
-        $getTransactions = Http::withToken($token)
-            ->get("{$this->baseUrl}/transactions");
-        // logger($getTransactions->json());
-        // logger('transactions list: ', $getTransactions->json() ?? []);
-        $detailedTransaction = collect($getTransactions->json('data'))
+        $transactionData = [
+            'amount' => $data['amount'],
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'cardNumber' => $data['card_number'],
+            'cvv' => $data['cvv'],
+        ];
+
+        $makeTransaction = $this->requestService
+            ->withToken($token)
+            ->send('/transactions', $transactionData);
+
+        $externalId = $makeTransaction['id'];
+
+        $getTransactions = $this->requestService
+            ->withToken($token)
+            ->get()
+            ->send('/transactions');
+
+        $detailedTransaction = collect($getTransactions['data'])
             ->firstWhere('id', $externalId);
 
         return [
@@ -51,12 +60,14 @@ class GatewayOneService implements GatewayInterface
         ];
     }
 
-    public function refund(string $externalId): array
+    public function refund(Transaction $transaction): array
     {
         $token = $this->getToken();
-        $makeRefund = Http::withToken($token)
-            ->post("{$this->baseUrl}/transactions/{$externalId}/charge_back");
+        $makeRefund = $this->requestService
+            ->withToken($token)
+            ->post()
+            ->send("/transactions/{$transaction->external_id}/charge_back");
 
-        return $makeRefund->json();
+        return $makeRefund;
     }
 }

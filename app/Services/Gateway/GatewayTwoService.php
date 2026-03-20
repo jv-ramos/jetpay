@@ -2,12 +2,14 @@
 
 namespace App\Services\Gateway;
 
+use App\Models\Transaction;
 use App\Services\Gateway\GatewayInterface;
-use Illuminate\Support\Facades\Http;
 
 class GatewayTwoService implements GatewayInterface
 {
-    private string $baseUrl = 'http://localhost:3002';
+    public function __construct(
+        private GatewayRequestService $requestService
+    ) {}
 
     private function authHeaders(): array
     {
@@ -19,46 +21,57 @@ class GatewayTwoService implements GatewayInterface
 
     public function createTransaction(array $data): array
     {
-        $response = Http::withHeaders($this->authHeaders())
-            ->post("{$this->baseUrl}/transacoes", [
-                'valor'       => $data['amount'],
-                'nome'        => $data['name'],
-                'email'       => $data['email'],
-                'numeroCartao' => $data['card_number'],
-                'cvv'         => $data['cvv'],
-            ]);
+        $headers = $this->authHeaders();
+        $transactionData = [
+            'valor' => $data['amount'],
+            'nome' => $data['name'],
+            'email' => $data['email'],
+            'numeroCartao' => $data['card_number'],
+            'cvv' => $data['cvv'],
+        ];
 
-        $externalId = $response->json('id');
+        $response = $this->requestService
+            ->withHeaders($headers)
+            ->post()
+            ->send('/transacoes', $transactionData);
 
-        $transactions = Http::withHeaders($this->authHeaders())
-            ->get("{$this->baseUrl}/transacoes");
+        logger($response);
+        $externalId = $response['id'];
 
-        $detailedTransaction = collect($transactions->json('data'))
+        $transactions = $this->requestService
+            ->withHeaders($headers)
+            ->get()
+            ->send('/transacoes');
+
+        $detailedTransaction = collect($transactions['data'])
             ->firstWhere('id', $externalId);
-        logger($detailedTransaction);
+
         return [
             'id'     => $externalId,
             'status' => $detailedTransaction['status'],
         ];
     }
 
-    public function refund(string $externalId): array
+    public function refund(Transaction $transaction): array
     {
-        $response = Http::withHeaders($this->authHeaders())
-            ->post("{$this->baseUrl}/transacoes/reembolso", [
-                'id' => $externalId,
-            ]);
+        $headers = $this->authHeaders();
+        $externalId = $transaction->external_id;
 
-        $refundId = $response->json('id');
+        $this->requestService
+            ->withHeaders($headers)
+            ->post()
+            ->send("/transacoes/reembolso", ["id" => $externalId]);
 
-        $transactions = Http::withHeaders($this->authHeaders())
-            ->get("{$this->baseUrl}/transacoes");
+        $transactions = $this->requestService
+            ->withHeaders($headers)
+            ->get()
+            ->send('/transacoes');
 
-        $detailedTransaction = collect($transactions->json('data'))
-            ->firstWhere('id', $refundId);
+        $detailedTransaction = collect($transactions['data'])
+            ->firstWhere('id', $externalId);
 
         return [
-            'id'     => $refundId,
+            'id'     => $externalId,
             'status' => $detailedTransaction['status'],
         ];
     }
