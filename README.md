@@ -134,8 +134,6 @@ POST /api/login
 
 O token retornado deve ser enviado no header `Authorization: Bearer {token}` em todas as rotas autenticadas.
 
----
-
 ## Entidades
 
 ### Users
@@ -150,8 +148,6 @@ Usuários do sistema com controle de acesso por role.
 | password | string | Senha criptografada                   |
 | role     | enum   | `ADMIN`, `MANAGER`, `FINANCE`, `USER` |
 
----
-
 ### Clients
 
 Clientes que realizam transações.
@@ -161,8 +157,6 @@ Clientes que realizam transações.
 | id    | bigint | Identificador único |
 | name  | string | Nome do cliente     |
 | email | string | E-mail único        |
-
----
 
 ### Products
 
@@ -174,8 +168,6 @@ Produtos disponíveis para compra.
 | name   | string          | Nome do produto     |
 | amount | unsignedInteger | Preço em centavos   |
 
----
-
 ### Gateways
 
 Gateways de pagamento disponíveis.
@@ -186,8 +178,6 @@ Gateways de pagamento disponíveis.
 | name      | string      | Nome do gateway                                |
 | is_active | boolean     | Se o gateway está ativo                        |
 | priority  | tinyInteger | Ordem de prioridade (menor = maior prioridade) |
-
----
 
 ### Transactions
 
@@ -203,8 +193,6 @@ Transações financeiras processadas pelos gateways.
 | amount            | unsignedInteger | Valor total em centavos            |
 | card_last_numbers | string(4)       | Últimos 4 dígitos do cartão        |
 
----
-
 ### Product Transaction (pivot)
 
 Tabela auxiliar que relaciona produtos a transações.
@@ -214,8 +202,6 @@ Tabela auxiliar que relaciona produtos a transações.
 | product_id     | FK              | Referência ao produto              |
 | transaction_id | FK              | Referência à transação             |
 | quantity       | unsignedInteger | Quantidade do produto na transação |
-
----
 
 ## Rotas
 
@@ -254,8 +240,6 @@ Tabela auxiliar que relaciona produtos a transações.
 | GET    | `/api/transactions/{id}`        | Detalhes da transação | Autenticado   |
 | POST   | `/api/transactions/{id}/refund` | Estornar transação    | ADMIN FINANCE |
 
----
-
 ## Criando uma Transação
 
 ```
@@ -277,8 +261,6 @@ POST /api/transactions
 ```
 
 O valor total (`amount`) é calculado automaticamente com base nos produtos e quantidades informados. O gateway é selecionado automaticamente pelo sistema com base na prioridade e disponibilidade.
-
----
 
 ## Testes
 
