@@ -286,7 +286,3 @@ O valor total (`amount`) é calculado automaticamente com base nos produtos e qu
 ./vendor/bin/pest
 ./vendor/bin/pest --coverage
 ```
-
-```
-
-```
