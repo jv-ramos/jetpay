@@ -10,18 +10,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
- * CLIENT ROUTES
- */
-
-Route::get('/clients', ClientController::class);
-
-/*
  * USER ROUTES
  */
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return UserResource::make($request->user());
 });
+
+Route::middleware('auth:sanctum')->get('/users', [UserController::class, 'index'])->name('users.index');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/user', UserController::class)->only('update', 'destroy');
@@ -49,5 +45,14 @@ Route::patch('gateways/{gateway}/priority', [GatewayController::class, 'updatePr
 
 Route::apiResource('/transactions', TransactionController::class)->only('index', 'store', 'show');
 Route::middleware('auth:sanctum')->post("/transactions/{id}/refund", [TransactionController::class, 'refund']);
+
+/*
+ * CLIENT ROUTES
+ */
+Route::middleware('auth:sanctum')->get('/clients', [ClientController::class, 'index'])->name('clients.index');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get("/clients/{client}", [ClientController::class, 'show'])->name('client.show');
+    Route::apiResource('/clients', ClientController::class)->only('store', 'update', 'destroy');
+});
 
 require __DIR__ . '/auth.php';
