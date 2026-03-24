@@ -3,18 +3,16 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
-use Illuminate\Container\Attributes\Auth;
 
 class UserPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
-    // public function viewAny(User $user): bool
-    // {
-    //     return false;
-    // }
+    public function viewAny(User $user): bool
+    {
+        return $user->role === 'ADMIN' || $user->role === 'MANAGER';
+    }
 
     /**
      * Determine whether the user can view the model.

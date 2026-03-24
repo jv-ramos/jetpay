@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -11,12 +12,14 @@ class UserController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Show the form for editing the specified resource.
+     * Display a listing of the resource.
      */
-    // public function edit(string $id)
-    // {
-    //     //
-    // }
+    public function index()
+    {
+        $this->authorize('viewAny', User::class);
+
+        return UserResource::collection(User::paginate(10));
+    }
 
     /**
      * Update the specified resource in storage.
