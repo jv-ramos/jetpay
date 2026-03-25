@@ -33,4 +33,12 @@ class ClientController extends Controller
 
         return new ClientResource($client);
     }
+
+    public function show(Client $client)
+    {
+        $client->load('transactions');
+        $client->load('transactions.products');
+
+        return new ClientResource($client);
+    }
 }
