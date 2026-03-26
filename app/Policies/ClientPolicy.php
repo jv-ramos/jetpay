@@ -21,7 +21,7 @@ class ClientPolicy
      */
     public function view(User $user, Client $client): bool
     {
-        return false;
+        return $user->role === 'ADMIN' || $user->role === 'MANAGER';
     }
 
     /**

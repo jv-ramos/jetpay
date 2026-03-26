@@ -36,6 +36,8 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
+        $this->authorize('view', $client);
+
         $client->load('transactions');
         $client->load('transactions.products');
 
