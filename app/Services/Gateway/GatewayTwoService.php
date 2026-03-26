@@ -35,7 +35,6 @@ class GatewayTwoService implements GatewayInterface
             ->post()
             ->send('/transacoes', $transactionData);
 
-        logger($response);
         $externalId = $response['id'];
 
         $transactions = $this->requestService

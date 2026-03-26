@@ -29,10 +29,16 @@ describe('Gateway', function () {
     });
 
     it('should toggle is_active successfully', function () {
-        $gateway = Gateway::create([
+        Gateway::create([
             'name' => 'Gateway 1',
             'is_active' => true,
             'priority' => 1,
+        ]);
+
+        $gateway = Gateway::create([
+            'name' => 'Gateway 2',
+            'is_active' => true,
+            'priority' => 2,
         ]);
 
         $this->patch("/api/gateways/{$gateway->id}/toggle")
@@ -41,6 +47,20 @@ describe('Gateway', function () {
         $gateway->refresh();
 
         expect($gateway->is_active)->toBeFalse();
+    });
+
+    it('should not toggle is_active if there is only one gateway', function () {
+        $gateway = Gateway::create([
+            'name' => 'Gateway 1',
+            'is_active' => true,
+            'priority' => 1,
+        ]);
+
+        $this->patch("/api/gateways/{$gateway->id}/toggle");
+
+        $gateway->refresh();
+
+        expect($gateway->is_active)->toBeTrue();
     });
 
     it('should update priority successfully', function () {
