@@ -4,6 +4,7 @@ use App\Models\Client;
 use App\Models\Gateway;
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 
@@ -100,7 +101,11 @@ describe('Transaction', function () {
             ->assertJsonCount(1, 'data.products');
     });
 
-    it('should refund a transaction', function () {
+    it('should refund a transaction as a user with FINANCE role', function () {
+        \Illuminate\Support\Env::getRepository()->set('GATEWAY1_URL', 'http://localhost:3001');
+
+        $user = User::factory()->create(['role' => 'FINANCE']);
+
         $client = Client::create([
             'name' => 'Client 1',
             'email' => 'client1@exmaple.com',
@@ -130,13 +135,17 @@ describe('Transaction', function () {
         $transaction->products()->attach($product->id, ['quantity' => 2]);
         $transaction->load('products');
 
-        $this->postJson("/api/transactions/{$transaction->id}/refund")
-            ->assertOk()
+        $this->actingAs($user)->postJson("/api/transactions/{$transaction->id}/refund")
+            ->assertStatus(200)
             ->assertJsonStructure(['data' => ['id', 'client_id', 'gateway_id', 'external_id', 'status', 'amount', 'card_last_numbers', 'created_at']])
             ->assertJsonPath('data.status', 'charged_back');
     });
 
     it('should not refund a charged_back transaction', function () {
+        \Illuminate\Support\Env::getRepository()->set('GATEWAY1_URL', 'http://localhost:3001');
+
+        $user = User::factory()->create(['role' => 'FINANCE']);
+
         $client = Client::create([
             'name' => 'Client 1',
             'email' => 'client1@exmaple.com',
@@ -166,7 +175,7 @@ describe('Transaction', function () {
         $transaction->products()->attach($product->id, ['quantity' => 2]);
         $transaction->load('products');
 
-        $this->postJson("/api/transactions/{$transaction->id}/refund")
+        $this->actingAs($user)->postJson("/api/transactions/{$transaction->id}/refund")
             ->assertStatus(422)->assertJson(['message' => 'Transaction already refunded.']);
     });
 
