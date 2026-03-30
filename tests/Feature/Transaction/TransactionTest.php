@@ -199,4 +199,25 @@ describe('Transaction', function () {
         expect($transaction->gateway)->toBeInstanceOf(Gateway::class);
         expect($transaction->gateway->id)->toBe($gateway->id);
     });
+
+    it('should belongs to Client', function () {
+        $client = Client::create([
+            'name' => 'Client 1',
+            'email' => 'client@example.com'
+        ]);
+
+        $gateway = Gateway::create(['is_active' => true, 'priority' => 1, 'name' => 'gateway_1']);
+
+        $transaction = Transaction::create([
+            'client_id' => $client->id,
+            'gateway_id' => $gateway->id,
+            'external_id' => 'abc123',
+            'status' => 'pending',
+            'amount' => 1000,
+            'card_last_numbers' => '1234',
+
+        ]);
+
+        expect($transaction->client())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    });
 });
