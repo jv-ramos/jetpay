@@ -6,6 +6,63 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 describe('User', function () {
     uses(RefreshDatabase::class);
 
+    it('should fail to view users without authentication', function () {
+        $response = $this->withHeaders(['Accept' => 'application/json'])
+            ->get('/api/user');
+
+        $response->assertUnauthorized();
+    });
+
+    it('should fail to view users as a common user', function (string $role) {
+        $user = User::factory()->create(['role' => $role]);
+
+        $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->get('/api/users')
+            ->assertForbidden();
+    })->with(['USER', 'FINANCE']);
+
+    it('should view users successfully as an admin or manager', function (string $role) {
+        $admin = User::factory()->create(['role' => $role]);
+
+        $response = $this->actingAs($admin)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->get('/api/user');
+
+        $response->assertStatus(200);
+        expect($response->json())->toHaveCount(1);
+        expect($response->json('data'))->toHaveCount(4);
+        expect($response->json('data'))->toHaveKeys(['id', 'name', 'email', 'role']);
+    })->with(['ADMIN', 'MANAGER']);
+
+    it('should fail to create a user without authentication', function () {
+        $response = $this->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/register', [
+                'name' => 'New User',
+                'email' => 'newuser@exmaple.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+
+        $response->assertUnauthorized();
+    });
+
+    it('should fail to create a user as a common user or finance', function (string $role) {
+        $user = User::factory()->create(['role' => $role]);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/register', [
+                'name' => 'New User',
+                'email' => 'new@email.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'role' => 'USER',
+            ]);
+
+        $response->assertForbidden();
+    })->with(['USER', 'FINANCE']);
+
     it('should fail to update a user without authentication', function () {
         $user = User::factory()->create();
 

@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\Client;
+use App\Models\Gateway;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Services\Gateway\GatewayRequestService;
 use App\Services\Gateway\GatewayTwoService;
 use Illuminate\Support\Facades\Http;
 
@@ -18,7 +23,7 @@ describe('Gateway Two Service', function () {
                 ], 200),
         ]);
 
-        $service = new GatewayTwoService();
+        $service = new GatewayTwoService(new GatewayRequestService('http://localhost:3002'));
         $result = $service->createTransaction([
             'client_id'   => 1,
             'amount'      => 1000,
@@ -33,6 +38,27 @@ describe('Gateway Two Service', function () {
     });
 
     it('should refund a transaction on gateway two', function () {
+        $client = Client::create([
+            'name' => 'Client 1',
+            'email' => 'client1@exmaple.com',
+        ]);
+
+        $gateway = Gateway::create(['is_active' => true, 'priority' => 1, 'name' => 'gateway_1']);
+
+        Product::create([
+            'name' => 'Product 1',
+            'amount' => 1000,
+        ]);
+
+        $transaction = Transaction::create([
+            'client_id'         => $client->id,
+            'gateway_id'        => $gateway->id,
+            'external_id'       => 'fake-external-id',
+            'status'            => 'pending',
+            'amount'            => 1000,
+            'card_last_numbers' => '1234',
+        ]);
+
         Http::fake([
             'localhost:3002/transacoes/reembolso' => Http::response(['id' => 'fake-external-id'], 200),
             'localhost:3002/transacoes' => Http::response([
@@ -42,8 +68,8 @@ describe('Gateway Two Service', function () {
             ], 200),
         ]);
 
-        $service = new GatewayTwoService();
-        $result = $service->refund('fake-external-id');
+        $service = new GatewayTwoService(new GatewayRequestService('http://localhost:3002'));
+        $result = $service->refund($transaction);
 
         expect($result['id'])->toBe('fake-external-id');
         expect($result['status'])->toBe('charged_back');

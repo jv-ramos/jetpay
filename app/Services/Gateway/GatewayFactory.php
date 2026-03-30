@@ -12,12 +12,17 @@ class GatewayFactory
      */
     public static function make(Gateway $gateway): GatewayInterface
     {
+        $urls = [
+            'gateway_1' => env('GATEWAY1_URL', 'http://localhost:3001'),
+            'gateway_2' => env('GATEWAY2_URL', 'http://localhost:3002'),
+        ];
+
         return match ($gateway->name) {
             'gateway_1' => new GatewayOneService(
-                new GatewayRequestService('http://localhost:3001')
+                new GatewayRequestService($urls['gateway_1'])
             ),
             'gateway_2' => new GatewayTwoService(
-                new GatewayRequestService('http://localhost:3002')
+                new GatewayRequestService($urls['gateway_2'])
             ),
             default => throw new \InvalidArgumentException("Unsupported gateway: {$gateway->name}"),
         };

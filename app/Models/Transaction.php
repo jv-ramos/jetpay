@@ -24,4 +24,9 @@ class Transaction extends Model
     {
         return $this->belongsTo(Gateway::class);
     }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 }

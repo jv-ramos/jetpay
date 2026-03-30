@@ -1,10 +1,18 @@
 # JetPay API
 
+<div align="left">
+  <img src="https://img.shields.io/badge/Status-Work In Progress-orange" alt="Status">
+  <img src="https://img.shields.io/badge/PHP-8.2-blue" alt="PHP">
+  <img src="https://img.shields.io/badge/Laravel-12.0-red" alt="Laravel">
+  <img src="https://img.shields.io/badge/Pest-4.4-yellow" alt="Pest">
+</div>
+
 API de gateway de pagamento desenvolvida em Laravel 12 com suporte a múltiplos gateways.
 
 ## Requisitos
 
-- PHP 8.5+
+- PHP 8.2+
+- Laravel 12+
 - PostgreSQL 16+
 - Composer
 - Docker (opcional)
@@ -207,18 +215,18 @@ Tabela auxiliar que relaciona produtos a transações.
 
 ### Autenticação
 
-| Metódo | Rota            | Descrição                             |
-| ------ | --------------- | ------------------------------------- |
-| POST   | `/api/register` | Registrar um usuário (ADMIN, MANAGER) |
-| POST   | `/api/login`    | Login não requer autenticação         |
-| GET    | `/api/user`     | Detalhes do usuário autenticado       |
-| GET    | `/api/users`    | Listar usuários (ADMIN, MANAGER)      |
+| Metódo | Rota            | Descrição                       | Role          |
+| ------ | --------------- | ------------------------------- | ------------- |
+| POST   | `/api/register` | Registrar um usuário            | ADMIN MANAGER |
+| POST   | `/api/login`    | Login não requer autenticação   | Public        |
+| GET    | `/api/user`     | Detalhes do usuário autenticado | Public        |
+| GET    | `/api/users`    | Listar usuários                 | ADMIN MANAGER |
 
 ### Products
 
 | Método | Rota                 | Descrição           | Role          |
 | ------ | -------------------- | ------------------- | ------------- |
-| GET    | `/api/products`      | Listar produtos     | Público       |
+| GET    | `/api/products`      | Listar produtos     | Public        |
 | POST   | `/api/products`      | Criar produto       | ADMIN MANAGER |
 | GET    | `/api/products/{id}` | Detalhes do produto | ADMIN MANAGER |
 | PUT    | `/api/products/{id}` | Atualizar produto   | ADMIN MANAGER |
@@ -226,18 +234,18 @@ Tabela auxiliar que relaciona produtos a transações.
 
 ### Gateways
 
-| Método | Rota                          | Descrição          | Role        |
-| ------ | ----------------------------- | ------------------ | ----------- |
-| PATCH  | `/api/gateways/{id}/toggle`   | Ativar/desativar   | Autenticado |
-| PATCH  | `/api/gateways/{id}/priority` | Alterar prioridade | Autenticado |
+| Método | Rota                          | Descrição          | Role          |
+| ------ | ----------------------------- | ------------------ | ------------- |
+| PATCH  | `/api/gateways/{id}/toggle`   | Ativar/desativar   | Authenticated |
+| PATCH  | `/api/gateways/{id}/priority` | Alterar prioridade | Authenticated |
 
 ### Transactions
 
 | Método | Rota                            | Descrição             | Role          |
 | ------ | ------------------------------- | --------------------- | ------------- |
-| GET    | `/api/transactions`             | Listar transações     | Autenticado   |
-| POST   | `/api/transactions`             | Criar transação       | Autenticado   |
-| GET    | `/api/transactions/{id}`        | Detalhes da transação | Autenticado   |
+| GET    | `/api/transactions`             | Listar transações     | Authenticated |
+| POST   | `/api/transactions`             | Criar transação       | Public        |
+| GET    | `/api/transactions/{id}`        | Detalhes da transação | Authenticated |
 | POST   | `/api/transactions/{id}/refund` | Estornar transação    | ADMIN FINANCE |
 
 ## Criando uma Transação

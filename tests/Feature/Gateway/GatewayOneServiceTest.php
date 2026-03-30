@@ -1,6 +1,11 @@
 <?php
 
+use App\Models\Client;
+use App\Models\Gateway;
+use App\Models\Product;
+use App\Models\Transaction;
 use App\Services\Gateway\GatewayOneService;
+use App\Services\Gateway\GatewayRequestService;
 use Illuminate\Support\Facades\Http;
 
 describe('Gateway One Service', function () {
@@ -17,7 +22,7 @@ describe('Gateway One Service', function () {
                 ], 200),
         ]);
 
-        $service = new GatewayOneService();
+        $service = new GatewayOneService(new GatewayRequestService('http://localhost:3001'));
         $result = $service->createTransaction([
             'amount'      => 1000,
             'name'        => 'John Doe',
@@ -31,6 +36,27 @@ describe('Gateway One Service', function () {
     });
 
     it('should refund a transaction on gateway one', function () {
+        $client = Client::create([
+            'name' => 'Client 1',
+            'email' => 'client1@exmaple.com',
+        ]);
+
+        $gateway = Gateway::create(['is_active' => true, 'priority' => 1, 'name' => 'gateway_1']);
+
+        $product = Product::create([
+            'name' => 'Product 1',
+            'amount' => 1000,
+        ]);
+
+        $transaction = Transaction::create([
+            'client_id'         => $client->id,
+            'gateway_id'        => $gateway->id,
+            'external_id'       => 'fake-external-id',
+            'status'            => 'charged_back',
+            'amount'            => 1000,
+            'card_last_numbers' => '1234',
+        ]);
+
         Http::fake([
             'localhost:3001/login' => Http::response(['token' => 'fake-token'], 200),
             'localhost:3001/transactions/fake-external-id/charge_back' => Http::response([
@@ -44,8 +70,8 @@ describe('Gateway One Service', function () {
             ], 200),
         ]);
 
-        $service = new GatewayOneService();
-        $result = $service->refund('fake-external-id');
+        $service = new GatewayOneService(new GatewayRequestService('http://localhost:3001'));
+        $result = $service->refund($transaction);
 
         expect($result['id'])->toBe('fake-external-id');
         expect($result['status'])->toBe('charged_back');
