@@ -67,6 +67,7 @@ class GatewayOneService implements GatewayInterface
             ->withToken($token)
             ->post()
             ->send("/transactions/{$transaction->external_id}/charge_back");
+        logger($makeRefund);
 
         return $makeRefund;
     }
