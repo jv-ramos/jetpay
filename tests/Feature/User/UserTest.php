@@ -27,12 +27,11 @@ describe('User', function () {
 
         $response = $this->actingAs($admin)
             ->withHeaders(['Accept' => 'application/json'])
-            ->get('/api/user');
+            ->get('/api/users');
 
         $response->assertStatus(200);
-        expect($response->json())->toHaveCount(1);
-        expect($response->json('data'))->toHaveCount(4);
-        expect($response->json('data'))->toHaveKeys(['id', 'name', 'email', 'role']);
+        expect($response->json('data'))->toHaveCount(1);
+        expect($response->json('data')[0])->toHaveKeys(['id', 'name', 'email', 'role']);
     })->with(['ADMIN', 'MANAGER']);
 
     it('should fail to create a user without authentication', function () {
