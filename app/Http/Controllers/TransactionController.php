@@ -13,8 +13,16 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class TransactionController extends Controller
 {
     use AuthorizesRequests;
+
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *      path="/api/transactions",
+     *      summary="Listar transações",
+     *      tags={"Transactions"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Response(response=200, description="Lista de transações"),
+     *      @OA\Response(response=401, description="Não autorizado")
+     *  )
      */
     public function index()
     {
@@ -22,7 +30,30 @@ class TransactionController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/transactions",
+     *     summary="Criar transação",
+     *     tags={"Transactions"},
+     *     security={{"sanctum": {}}},
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             required={"client_id","name","email","card_number","cvv","cart"},
+     *             @OA\Property(property="client_id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="johndoe@example.com"),
+     *             @OA\Property(property="card_number", type="string", example="5569000000006063"),
+     *             @OA\Property(property="cvv", type="string", example="010"),
+     *             @OA\Property(property="cart", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="product_id", type="integer", example=1),
+     *                     @OA\Property(property="quantity", type="integer", example=2)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Transação criada"),
+     *     @OA\Response(response=422, description="Erro de validação")
+     * )
      */
     public function store(Request $request)
     {
@@ -70,7 +101,21 @@ class TransactionController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *      path="/api/transactions/{id}",
+     *      summary="",
+     *      tags={"Transactions"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          description="ID da transação",
+     *          required=true,
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=200, description="Detalhes da transação"),
+     *      @OA\Response(response=404, description="Transação não encontrada")
+     * )
      */
     public function show(Transaction $transaction)
     {
@@ -79,7 +124,22 @@ class TransactionController extends Controller
     }
 
     /**
-     * Update the specified resource from storage.
+     * @OA\Post(
+     *      path="/api/transactions/{id}/refund",
+     *      summary="Reembolsar transação",
+     *      tags={"Transactions"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          description="ID da transação",
+     *          required=true,
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=200, description="Transação reembolsada"),
+     *      @OA\Response(response=422, description="Transação já reembolsada"),
+     *      @OA\Response(response=404, description="Transação não encontrada")
+     * )
      */
     public function refund(string $id)
     {
