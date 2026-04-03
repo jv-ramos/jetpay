@@ -9,52 +9,88 @@ use App\Models\Transaction;
 use App\Services\Gateway\GatewayFactory;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use OpenApi\Attributes as OA;
 
 class TransactionController extends Controller
 {
     use AuthorizesRequests;
 
-    /**
-     * @OA\Get(
-     *      path="/api/transactions",
-     *      summary="Listar transações",
-     *      tags={"Transactions"},
-     *      security={{"sanctum": {}}},
-     *      @OA\Response(response=200, description="Lista de transações"),
-     *      @OA\Response(response=401, description="Não autorizado")
-     *  )
-     */
+    #[OA\Get(
+        path: '/transactions',
+        description: 'Retorna uma lista paginada de transações',
+        summary: 'Listar transações',
+        security: [['sanctum' => []]],
+        tags: ['Transactions'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Lista de transações',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'client_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'gateway_id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'external_id', type: 'string', example: 'abc123'),
+                                    new OA\Property(property: 'status', type: 'string', example: 'paid'),
+                                    new OA\Property(property: 'amount', type: 'integer', example: 1000),
+                                    new OA\Property(property: 'card_last_numbers', type: 'string', example: '6063'),
+                                    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2024-01-01T00:00:00Z'),
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Não autorizado'),
+        ]
+    )]
     public function index()
     {
         return TransactionResource::collection(Transaction::paginate(10));
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/transactions",
-     *     summary="Criar transação",
-     *     tags={"Transactions"},
-     *     security={{"sanctum": {}}},
-     *     @OA\RequestBody(
-     *         @OA\JsonContent(
-     *             required={"client_id","name","email","card_number","cvv","cart"},
-     *             @OA\Property(property="client_id", type="integer", example=1),
-     *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="email", type="string", example="johndoe@example.com"),
-     *             @OA\Property(property="card_number", type="string", example="5569000000006063"),
-     *             @OA\Property(property="cvv", type="string", example="010"),
-     *             @OA\Property(property="cart", type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="product_id", type="integer", example=1),
-     *                     @OA\Property(property="quantity", type="integer", example=2)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Transação criada"),
-     *     @OA\Response(response=422, description="Erro de validação")
-     * )
-     */
+    #[OA\Post(
+        path: '/transactions',
+        description: 'Cria uma nova transação',
+        summary: 'Criar transação',
+        security: [['sanctum' => []]],
+        tags: ['Transactions'],
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Transação criada',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'client_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'gateway_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'external_id', type: 'string', example: 'abc123'),
+                        new OA\Property(property: 'status', type: 'string', example: 'paid'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 1000),
+                        new OA\Property(property: 'card_last_numbers', type: 'string', example: '6063'),
+                        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2024-01-01T00:00:00Z'),
+                        new OA\Property(
+                            property: 'products',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'name', type: 'string', example: 'Product A'),
+                                    new OA\Property(property: 'amount', type: 'integer', example: 500),
+                                    new OA\Property(property: 'quantity', type: 'integer', example: 2),
+                                ]
+                            )
+                        ),
+                    ]
+                )
+            )
+        ]
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -100,47 +136,95 @@ class TransactionController extends Controller
         return new TransactionResource($transaction);
     }
 
-    /**
-     * @OA\Get(
-     *      path="/api/transactions/{id}",
-     *      summary="",
-     *      tags={"Transactions"},
-     *      security={{"sanctum": {}}},
-     *      @OA\Parameter(
-     *          name="id",
-     *          in="path",
-     *          description="ID da transação",
-     *          required=true,
-     *          @OA\Schema(type="integer")
-     *      ),
-     *      @OA\Response(response=200, description="Detalhes da transação"),
-     *      @OA\Response(response=404, description="Transação não encontrada")
-     * )
-     */
+    #[OA\Get(
+        path: '/transactions/{id}',
+        description: 'Exibe os detalhes de uma transação específica',
+        summary: 'Exibir transação',
+        security: [['sanctum' => []]],
+        tags: ['Transactions'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'ID da transação',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Detalhes da transação',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'client_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'gateway_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'external_id', type: 'string', example: 'abc123'),
+                        new OA\Property(property: 'status', type: 'string', example: 'paid'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 1000),
+                        new OA\Property(property: 'card_last_numbers', type: 'string', example: '6063'),
+                        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2024-01-01T00:00:00Z'),
+                        new OA\Property(
+                            property: 'products',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                                    new OA\Property(property: 'name', type: 'string', example: 'Product A'),
+                                    new OA\Property(property: 'amount', type: 'integer', example: 500),
+                                    new OA\Property(property: 'quantity', type: 'integer', example: 2),
+                                ]
+                            )
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 404, description: 'Transação não encontrada'),
+        ]
+
+    )]
     public function show(Transaction $transaction)
     {
         $transaction->load('products');
         return new TransactionResource($transaction);
     }
 
-    /**
-     * @OA\Post(
-     *      path="/api/transactions/{id}/refund",
-     *      summary="Reembolsar transação",
-     *      tags={"Transactions"},
-     *      security={{"sanctum": {}}},
-     *      @OA\Parameter(
-     *          name="id",
-     *          in="path",
-     *          description="ID da transação",
-     *          required=true,
-     *          @OA\Schema(type="integer")
-     *      ),
-     *      @OA\Response(response=200, description="Transação reembolsada"),
-     *      @OA\Response(response=422, description="Transação já reembolsada"),
-     *      @OA\Response(response=404, description="Transação não encontrada")
-     * )
-     */
+    #[OA\Post(
+        path: '/transactions/{id}/refund',
+        description: 'Realiza o estorno de uma transação',
+        summary: 'Estornar transação',
+        security: [['sanctum' => []]],
+        tags: ['Transactions'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                description: 'ID da transação a ser estornada',
+                required: true,
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Transação estornada com sucesso',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer', example: 1),
+                        new OA\Property(property: 'client_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'gateway_id', type: 'integer', example: 1),
+                        new OA\Property(property: 'external_id', type: 'string', example: 'abc123'),
+                        new OA\Property(property: 'status', type: 'string', example: 'charged_back'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 1000),
+                        new OA\Property(property: 'card_last_numbers', type: 'string', example: '6063'),
+                        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2024-01-01T00:00:00Z'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: 'Transação já estornada'),
+        ]
+    )]
     public function refund(string $id)
     {
         $this->authorize('refund', Transaction::class);
