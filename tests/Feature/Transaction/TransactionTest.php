@@ -13,6 +13,8 @@ describe('Transaction', function () {
     uses(RefreshDatabase::class);
 
     it('should be created successfully', function () {
+        \Illuminate\Support\Env::getRepository()->set('GATEWAY1_URL', 'http://localhost:3001');
+
         $client = Client::create([
             'name' => 'Client 1',
             'email' => 'client1@exmaple.com',
@@ -44,7 +46,8 @@ describe('Transaction', function () {
                 ['product_id' => $product->id, 'quantity' => 2]
             ],
         ]);
-        $response->assertCreated()->assertJsonStructure(["data" => ['id', 'client_id', 'status', 'amount', 'products']]);
+
+        $response->assertStatus(201)->assertJsonStructure(["data" => ['id', 'client_id', 'status', 'amount', 'products']]);
     });
 
     it('should index transactions', function () {

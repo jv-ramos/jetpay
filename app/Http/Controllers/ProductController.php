@@ -11,7 +11,13 @@ class ProductController extends Controller
 {
     use AuthorizesRequests;
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/products",
+     *     summary="Listar produtos",
+     *     tags={"Products"},
+     *     security={{"sanctum": {}}},
+     *     @OA\Response(response=200, description="Lista de produtos")
+     * )
      */
     public function index()
     {
@@ -19,7 +25,21 @@ class ProductController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *      path="/products",
+     *      summary="Criar produto",
+     *      tags={"Products"},
+     *      security={{"sanctum": {}}},
+     *      @OA\RequestBody(
+     *          @OA\JsonContent(
+     *          required={"name","amount"},
+     *          @OA\Property(property="name", type="string", example="Produto A"),
+     *          @OA\Property(property="amount", type="integer", example=100)
+     *          )
+     *      ),
+     *      @OA\Response(response=201, description="Produto criado"),
+     *      @OA\Response(response=422, description="Erro de validação")
+     * )
      */
     public function store(Request $request)
     {
@@ -36,7 +56,21 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *      path="/products/{id}",
+     *      summary="Exibir produto",
+     *      tags={"Products"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          description="ID do produto",
+     *          required=true,
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=200, description="Produto encontrado"),
+     *      @OA\Response(response=404, description="Produto não encontrado")
+     * )
      */
     public function show(Product $product)
     {
@@ -44,7 +78,28 @@ class ProductController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *      path="/products/{id}",
+     *      summary="Atualizar produto",
+     *      tags={"Products"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          description="ID do produto",
+     *          required=true,
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\RequestBody(
+     *          @OA\JsonContent(
+     *              @OA\Property(property="name", type="string", example="Produto A"),
+     *              @OA\Property(property="amount", type="integer", example=100)
+     *          )
+     *      ),
+     *      @OA\Response(response=200, description="Produto atualizado"),
+     *      @OA\Response(response=422, description="Erro de validação"),
+     *      @OA\Response(response=404, description="Produto não encontrado")
+     * )
      */
     public function update(Request $request, Product $product)
     {
@@ -61,7 +116,21 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *      path="/products/{id}",
+     *      summary="Excluir produto",
+     *      tags={"Products"},
+     *      security={{"sanctum": {}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          in="path",
+     *          description="ID do produto",
+     *          required=true,
+     *          @OA\Schema(type="integer")
+     *      ),
+     *      @OA\Response(response=204, description="Produto excluído"),
+     *      @OA\Response(response=404, description="Produto não encontrado")
+     * )
      */
     public function destroy(Product $product)
     {

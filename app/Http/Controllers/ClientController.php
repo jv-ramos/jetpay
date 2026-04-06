@@ -43,4 +43,27 @@ class ClientController extends Controller
 
         return new ClientResource($client);
     }
+
+    public function update(Request $request, Client $client)
+    {
+        $this->authorize('update', $client);
+
+        $validated = $request->validate([
+            'name'  => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:clients,email,' . $client->id,
+        ]);
+
+        $client->update($validated);
+
+        return new ClientResource($client);
+    }
+
+    public function destroy(Client $client)
+    {
+        $this->authorize('delete', $client);
+
+        $client->delete();
+
+        return response()->noContent();
+    }
 }
