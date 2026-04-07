@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use OpenApi\Attributes as OA;
 
 class RegisteredUserController extends Controller
 {
@@ -20,6 +21,28 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
+
+    #[OA\Post(
+        path: '/register',
+        description: 'Register a new user',
+        summary: 'Register',
+        security: [['sanctum' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successful operation'
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Bad Request'
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthorized'
+            )
+        ]
+    )]
     public function store(Request $request): Response
     {
         $request->validate([
