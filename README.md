@@ -11,32 +11,37 @@ API de gateway de pagamento desenvolvida em Laravel 12 com suporte a múltiplos 
 
 ## Requisitos
 
+- Docker
+
+## Opcional (instalação local)
+
 - PHP 8.2+
 - Laravel 12+
 - PostgreSQL 16+
 - Composer
-- Docker (opcional)
-
-## Instalação
-
-```bash
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
-```
 
 ## Docker
 
 ```bash
+# Build and run the application containers
 docker compose up --build -d
-docker compose exec app php artisan migrate --seed
+
+# Set up the .env file and database and seed initial data
+docker compose exec app /bin/bash -c \
+'cp .env.example .env && php artisan key:generate && php artisan migrate --seed'
 ```
+
+## Requisições
+
+Basta importar a coleção Postman `jetpay_multi-gateway_api.postman_collection.json` disponível no repositório para testar as rotas da API.
+
+## Swagger
+
+Após iniciar os containers você pode acessar a [documentação aqui](http://127.0.0.1:8000/api/documentation#/).
 
 ## Entidades
 
-Apos a instalação, as seguintes entidades estarão disponíveis no banco de dados:
+Após a instalação, as seguintes entidades estarão disponíveis no banco de dados:
 
 ### Users
 
@@ -142,113 +147,9 @@ POST /api/login
 
 O token retornado deve ser enviado no header `Authorization: Bearer {token}` em todas as rotas autenticadas.
 
-## Entidades
-
-### Users
-
-Usuários do sistema com controle de acesso por role.
-
-| Campo    | Tipo   | Descrição                             |
-| -------- | ------ | ------------------------------------- |
-| id       | bigint | Identificador único                   |
-| name     | string | Nome do usuário                       |
-| email    | string | E-mail único                          |
-| password | string | Senha criptografada                   |
-| role     | enum   | `ADMIN`, `MANAGER`, `FINANCE`, `USER` |
-
-### Clients
-
-Clientes que realizam transações.
-
-| Campo | Tipo   | Descrição           |
-| ----- | ------ | ------------------- |
-| id    | bigint | Identificador único |
-| name  | string | Nome do cliente     |
-| email | string | E-mail único        |
-
-### Products
-
-Produtos disponíveis para compra.
-
-| Campo  | Tipo            | Descrição           |
-| ------ | --------------- | ------------------- |
-| id     | bigint          | Identificador único |
-| name   | string          | Nome do produto     |
-| amount | unsignedInteger | Preço em centavos   |
-
-### Gateways
-
-Gateways de pagamento disponíveis.
-
-| Campo     | Tipo        | Descrição                                      |
-| --------- | ----------- | ---------------------------------------------- |
-| id        | bigint      | Identificador único                            |
-| name      | string      | Nome do gateway                                |
-| is_active | boolean     | Se o gateway está ativo                        |
-| priority  | tinyInteger | Ordem de prioridade (menor = maior prioridade) |
-
-### Transactions
-
-Transações financeiras processadas pelos gateways.
-
-| Campo             | Tipo            | Descrição                          |
-| ----------------- | --------------- | ---------------------------------- |
-| id                | bigint          | Identificador único                |
-| client_id         | FK              | Referência ao cliente              |
-| gateway_id        | FK              | Referência ao gateway utilizado    |
-| external_id       | string          | ID da transação no gateway externo |
-| status            | string          | Status retornado pelo gateway      |
-| amount            | unsignedInteger | Valor total em centavos            |
-| card_last_numbers | string(4)       | Últimos 4 dígitos do cartão        |
-
-### Product Transaction (pivot)
-
-Tabela auxiliar que relaciona produtos a transações.
-
-| Campo          | Tipo            | Descrição                          |
-| -------------- | --------------- | ---------------------------------- |
-| product_id     | FK              | Referência ao produto              |
-| transaction_id | FK              | Referência à transação             |
-| quantity       | unsignedInteger | Quantidade do produto na transação |
-
-## Rotas
-
-### Autenticação
-
-| Metódo | Rota            | Descrição                       | Role          |
-| ------ | --------------- | ------------------------------- | ------------- |
-| POST   | `/api/register` | Registrar um usuário            | ADMIN MANAGER |
-| POST   | `/api/login`    | Login não requer autenticação   | Public        |
-| GET    | `/api/user`     | Detalhes do usuário autenticado | Public        |
-| GET    | `/api/users`    | Listar usuários                 | ADMIN MANAGER |
-
-### Products
-
-| Método | Rota                 | Descrição           | Role          |
-| ------ | -------------------- | ------------------- | ------------- |
-| GET    | `/api/products`      | Listar produtos     | Public        |
-| POST   | `/api/products`      | Criar produto       | ADMIN MANAGER |
-| GET    | `/api/products/{id}` | Detalhes do produto | ADMIN MANAGER |
-| PUT    | `/api/products/{id}` | Atualizar produto   | ADMIN MANAGER |
-| DELETE | `/api/products/{id}` | Remover produto     | ADMIN MANAGER |
-
-### Gateways
-
-| Método | Rota                          | Descrição          | Role          |
-| ------ | ----------------------------- | ------------------ | ------------- |
-| PATCH  | `/api/gateways/{id}/toggle`   | Ativar/desativar   | Authenticated |
-| PATCH  | `/api/gateways/{id}/priority` | Alterar prioridade | Authenticated |
-
-### Transactions
-
-| Método | Rota                            | Descrição             | Role          |
-| ------ | ------------------------------- | --------------------- | ------------- |
-| GET    | `/api/transactions`             | Listar transações     | Authenticated |
-| POST   | `/api/transactions`             | Criar transação       | Public        |
-| GET    | `/api/transactions/{id}`        | Detalhes da transação | Authenticated |
-| POST   | `/api/transactions/{id}/refund` | Estornar transação    | ADMIN FINANCE |
-
 ## Criando uma Transação
+
+Você pode criar uma transação seguindo o modelo abaixo.
 
 ```
 POST /api/transactions
@@ -257,13 +158,14 @@ POST /api/transactions
 ```json
 {
     "client_id": 1,
-    "name": "John Doe",
-    "email": "johndoe@example.com",
+    "name": "Client One",
+    "email": "client1@example.com",
     "card_number": "5569000000006063",
     "cvv": "010",
     "cart": [
         { "product_id": 1, "quantity": 2 },
-        { "product_id": 2, "quantity": 1 }
+        { "product_id": 2, "quantity": 6 },
+        { "product_id": 3, "quantity": 7 }
     ]
 }
 ```
