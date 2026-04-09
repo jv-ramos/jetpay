@@ -99,5 +99,3 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-RUN cp .env.example .env
