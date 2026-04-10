@@ -27,9 +27,10 @@ Route::middleware('auth:sanctum')->group(function () {
  * PRODUCT ROUTES
  */
 
+Route::get("/products/{product}", [ProductController::class, 'show'])->name('product.show');
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get("/products/{product}", [ProductController::class, 'show'])->name('product.show');
-    Route::apiResource('/products', ProductController::class)->only('index', 'store', 'update', 'destroy');
+    Route::apiResource('/products', ProductController::class)->only('store', 'update', 'destroy');
 });
 
 /*
