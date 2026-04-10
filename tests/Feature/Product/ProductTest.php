@@ -7,15 +7,22 @@ use App\Models\User;
 describe('Product', function () {
     uses(RefreshDatabase::class);
 
-    it("shouldn't be able to access products without authentication", function () {
+    dataset('roles', ['ADMIN', 'MANAGER', 'FINANCE', 'USER']);
+
+    it("should be able to index Products without authentication", function () {
+        Product::create([
+            'name' => 'test_product',
+            'amount' => 10,
+        ]);
+
         $response = $this->withHeaders(['Accept' => 'application/json'])
             ->get('/api/products');
 
-        $response->assertUnauthorized();
+        $response->assertOk();
     });
 
-    it('should index products successfully to any user', function () {
-        $user = User::factory()->create();
+    it('should index Products successfully to :dataset', function (string $role) {
+        $user = User::factory()->create(['role' => $role]);
         Product::create([
             'name' => 'test_product',
             'amount' => 10,
@@ -30,10 +37,22 @@ describe('Product', function () {
         expect($response->json()['data'])->toHaveCount(1);
         expect($response->json()['data'][0]['name'])->toBe('test_product');
         expect($response->json()['data'][0]['amount'])->toBe(10);
+    })->with('roles');
+
+    it("should be able to show Products without authentication", function () {
+        Product::create([
+            'name' => 'test_product',
+            'amount' => 10,
+        ]);
+
+        $response = $this->withHeaders(['Accept' => 'application/json'])
+            ->get('/api/products/1');
+
+        $response->assertOk();
     });
 
-    it('should show a product successfully to any user', function () {
-        $user = User::factory()->create();
+    it('should show a product successfully if user role is :dataset', function (string $role) {
+        $user = User::factory()->create(['role' => $role]);
         $product = Product::create([
             'name' => 'test_product',
             'amount' => 10,
@@ -47,7 +66,7 @@ describe('Product', function () {
         expect($response->json())->toHaveKey('data');
         expect($response->json()['data']['name'])->toBe('test_product');
         expect($response->json()['data']['amount'])->toBe(10);
-    });
+    })->with('roles');
 
     it('should fail to delete a Product without authentication', function () {
         $product = Product::create([
@@ -75,8 +94,8 @@ describe('Product', function () {
         $response->assertForbidden();
     });
 
-    it('should delete a Product successfully as admin', function () {
-        $user = User::factory()->create(['role' => 'ADMIN']);
+    it('should delete a Product successfully if user role is :dataset', function (string $role) {
+        $user = User::factory()->create(['role' => $role]);
         $product = Product::create([
             'name' => 'test_product',
             'amount' => 10,
@@ -88,22 +107,7 @@ describe('Product', function () {
 
         $response->assertNoContent();
         expect(Product::find($product->id))->toBeNull();
-    });
-
-    it('should delete a Product successfully as manager', function () {
-        $user = User::factory()->create(['role' => 'MANAGER']);
-        $product = Product::create([
-            'name' => 'test_product',
-            'amount' => 10,
-        ]);
-
-        $response = $this->actingAs($user)
-            ->withHeaders(['Accept' => 'application/json'])
-            ->delete("/api/products/{$product->id}");
-
-        $response->assertNoContent();
-        expect(Product::find($product->id))->toBeNull();
-    });
+    })->with(['ADMIN', 'MANAGER', 'FINANCE']);
 
     it('should belong to many transactions', function () {
         $product = Product::create([
