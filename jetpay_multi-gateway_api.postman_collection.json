@@ -5,7 +5,7 @@
 		"description": "Para iniciar os mocks:\n\n**Com autenticação:**\n\n``` bash\ndocker run -p 3001:3001 -p 3002:3002 matheusprotzen/gateways-mock\n\n ```\n\n**Sem autenticação:**\n\n``` bash\ndocker run -p 3001:3001 -p 3002:3002 -e REMOVE_AUTH='true' matheusprotzen/gateways-mock\n\n ```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "46887213",
-		"_collection_link": "https://jetulio.postman.co/workspace/Jetulio's-Workspace~03258f71-57f9-4a85-8be6-99a0b6acb680/collection/46887213-e547f932-a581-4619-bb58-7d6d10d9204c?action=share&source=collection_link&creator=46887213"
+		"_collection_link": "https://jetulio.postman.co/workspace/03258f71-57f9-4a85-8be6-99a0b6acb680/collection/46887213-e547f932-a581-4619-bb58-7d6d10d9204c?action=share&source=collection_link&creator=46887213"
 	},
 	"item": [
 		{
@@ -967,7 +967,6 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
-				"requests": {},
 				"exec": [
 					""
 				]
@@ -978,7 +977,6 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
-				"requests": {},
 				"exec": [
 					""
 				]
@@ -987,12 +985,17 @@
 	],
 	"variable": [
 		{
+			"key": "gateway1_token",
+			"value": ""
+		},
+		{
 			"key": "token",
 			"value": ""
 		},
 		{
-			"key": "gateway1_token",
-			"value": ""
+			"key": "host",
+			"value": "",
+			"type": "string"
 		}
 	]
 }
