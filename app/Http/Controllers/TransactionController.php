@@ -111,9 +111,17 @@ class TransactionController extends Controller
         }, 0);
 
         // Process payment through the active gateway
+        $numberOfTries = 1;
+        $maxNumberOfTries = Gateway::where('is_active', true)->count();
         $selectedGateway = Gateway::where('is_active', true)->orderBy('priority')->first();
         $gatewayService = GatewayFactory::make($selectedGateway);
         $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amount]));
+        while ($numberOfTries <= $maxNumberOfTries && !$gatewayResponse || !$gatewayResponse['status']) {
+            $selectedGateway = Gateway::where('is_active', true)->orderBy('priority')->skip($numberOfTries)->first();
+            $gatewayService = GatewayFactory::make($selectedGateway);
+            $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amount]));
+            $numberOfTries++;
+        }
 
         // Create transaction record
         $transaction = Transaction::create([
