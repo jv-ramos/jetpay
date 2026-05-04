@@ -442,7 +442,15 @@
                                                         "type": "string",
                                                         "example": "Produto A"
                                                     },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Produto A is really good"
+                                                    },
                                                     "amount": {
+                                                        "type": "integer",
+                                                        "example": 10000
+                                                    },
+                                                    "quantity": {
                                                         "type": "integer",
                                                         "example": 100
                                                     }
@@ -488,7 +496,15 @@
                                             "type": "string",
                                             "example": "Produto A"
                                         },
+                                        "description": {
+                                            "type": "string",
+                                            "example": "Produto A is really good"
+                                        },
                                         "amount": {
+                                            "type": "integer",
+                                            "example": 10000
+                                        },
+                                        "quantity": {
                                             "type": "integer",
                                             "example": 100
                                         }
@@ -546,7 +562,15 @@
                                             "type": "string",
                                             "example": "Produto A"
                                         },
+                                        "description": {
+                                            "type": "string",
+                                            "example": "Produto A is really good"
+                                        },
                                         "amount": {
+                                            "type": "integer",
+                                            "example": 10000
+                                        },
+                                        "quantity": {
                                             "type": "integer",
                                             "example": 100
                                         }
@@ -602,7 +626,15 @@
                                             "type": "string",
                                             "example": "Produto A"
                                         },
+                                        "description": {
+                                            "type": "string",
+                                            "example": "Produto A is really good"
+                                        },
                                         "amount": {
+                                            "type": "integer",
+                                            "example": 10000
+                                        },
+                                        "quantity": {
                                             "type": "integer",
                                             "example": 100
                                         }

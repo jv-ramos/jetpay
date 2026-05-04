@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use OpenApi\Attributes as OA;
 
 class ProductController extends Controller
@@ -31,7 +31,9 @@ class ProductController extends Controller
                                 properties: [
                                     new OA\Property(property: 'id', type: 'integer', example: 1),
                                     new OA\Property(property: 'name', type: 'string', example: 'Produto A'),
-                                    new OA\Property(property: 'amount', type: 'integer', example: 100)
+                                    new OA\Property(property: 'description', type: 'string', example: 'Produto A is really good'),
+                                    new OA\Property(property: 'amount', type: 'integer', example: 10000),
+                                    new OA\Property(property: 'quantity', type: 'integer', example: 100),
                                 ]
                             )
                         ),
@@ -41,12 +43,15 @@ class ProductController extends Controller
             new OA\Response(
                 response: 401,
                 description: 'Unauthorized'
-            )
+            ),
         ]
     )]
     public function index()
     {
-        return ProductResource::collection(Product::paginate(10)); //latest()->take(50)->get());
+        $query = strstr(url()->full(), '?');
+        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').$query);
+
+        return $response['data'];
     }
 
     #[OA\Post(
@@ -63,7 +68,9 @@ class ProductController extends Controller
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'name', type: 'string', example: 'Produto A'),
-                        new OA\Property(property: 'amount', type: 'integer', example: 100)
+                        new OA\Property(property: 'description', type: 'string', example: 'Produto A is really good'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 10000),
+                        new OA\Property(property: 'quantity', type: 'integer', example: 100),
                     ]
                 )
             ),
@@ -74,7 +81,7 @@ class ProductController extends Controller
             new OA\Response(
                 response: 401,
                 description: 'Unauthorized'
-            )
+            ),
         ]
     )]
     public function store(Request $request)
@@ -82,13 +89,13 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'amount' => 'required|integer|min:1'
+            'name' => 'required|unique:products,name|string|min:3|max:50',
+            'description' => 'string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'quantity' => 'required|integer|min:0',
         ]);
 
-        $created = Product::create($validated);
-
-        return new ProductResource($created);
+        Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url'), $validated);
     }
 
     #[OA\Get(
@@ -104,7 +111,7 @@ class ProductController extends Controller
                 required: true,
                 description: 'Product ID',
                 schema: new OA\Schema(type: 'integer')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -114,7 +121,9 @@ class ProductController extends Controller
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'name', type: 'string', example: 'Produto A'),
-                        new OA\Property(property: 'amount', type: 'integer', example: 100)
+                        new OA\Property(property: 'description', type: 'string', example: 'Produto A is really good'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 10000),
+                        new OA\Property(property: 'quantity', type: 'integer', example: 100),
                     ]
                 )
             ),
@@ -125,12 +134,15 @@ class ProductController extends Controller
             new OA\Response(
                 response: 401,
                 description: 'Unauthorized'
-            )
+            ),
         ]
     )]
-    public function show(Product $product)
+    public function show()
     {
-        return ProductResource::make($product);
+        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
+        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').$query);
+
+        return $response['data'];
     }
 
     #[OA\Put(
@@ -146,7 +158,7 @@ class ProductController extends Controller
                 required: true,
                 description: 'Product ID',
                 schema: new OA\Schema(type: 'integer')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -156,7 +168,9 @@ class ProductController extends Controller
                     properties: [
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'name', type: 'string', example: 'Produto A'),
-                        new OA\Property(property: 'amount', type: 'integer', example: 100)
+                        new OA\Property(property: 'description', type: 'string', example: 'Produto A is really good'),
+                        new OA\Property(property: 'amount', type: 'integer', example: 10000),
+                        new OA\Property(property: 'quantity', type: 'integer', example: 100)
                     ]
                 )
             ),
@@ -171,21 +185,21 @@ class ProductController extends Controller
             new OA\Response(
                 response: 401,
                 description: 'Unauthorized'
-            )
+            ),
         ]
     )]
-    public function update(Request $request, Product $product)
+    public function update(Request $request)
     {
         $this->authorize('update', Product::class);
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'amount' => 'sometimes|required|integer|min:1'
+            'description' => 'nullable|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'quantity' => 'sometimes|integer|min:0',
         ]);
 
-        $product->update($validated);
-
-        return new ProductResource($product);
+        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
+        Http::withHeaders(['accept' => 'application/json'])->put(config('api.product_api_url').$query, $validated);
     }
 
     #[OA\Delete(
@@ -201,7 +215,7 @@ class ProductController extends Controller
                 required: true,
                 description: 'Product ID',
                 schema: new OA\Schema(type: 'integer')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -215,15 +229,16 @@ class ProductController extends Controller
             new OA\Response(
                 response: 401,
                 description: 'Unauthorized'
-            )
+            ),
         ]
     )]
-    public function destroy(Product $product)
+    public function destroy()
     {
         $this->authorize('delete', Product::class);
 
-        $product->delete();
+        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
+        $response = Http::withHeaders(['accept' => 'application/json'])->delete(config('api.product_api_url').$query);
 
-        return response()->noContent();
+        return $response;
     }
 }
