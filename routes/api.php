@@ -32,6 +32,7 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/products', ProductController::class)->only('store', 'update', 'destroy');
 });
+Route::post('/products/stockUpdate/{product}', [ProductController::class, 'stockUpdate']);
 
 /*
  * GATEWAY ROUTES

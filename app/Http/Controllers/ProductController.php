@@ -140,7 +140,7 @@ class ProductController extends Controller
     public function show()
     {
         $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
-        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').$query);
+        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').'/'.$query);
 
         return $response['data'];
     }
@@ -240,5 +240,13 @@ class ProductController extends Controller
         $response = Http::withHeaders(['accept' => 'application/json'])->delete(config('api.product_api_url').$query);
 
         return $response;
+    }
+
+    public function stockUpdate(Request $request) {
+        // $this->authorize('update', Product::class);
+
+        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
+        Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url').'/'.$query, $request);
+        echo $query;
     }
 }
