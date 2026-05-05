@@ -3,14 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\Product\ProductServices;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use OpenApi\Attributes as OA;
 
 class ProductController extends Controller
 {
     use AuthorizesRequests;
+
+    private ProductServices $service;
+
+    public function __construct(ProductServices $service)
+    {
+        $this->service = $service;
+    }
 
     #[OA\Get(
         path: '/products',
@@ -48,10 +55,7 @@ class ProductController extends Controller
     )]
     public function index()
     {
-        $query = strstr(url()->full(), '?');
-        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').$query);
-
-        return $response['data'];
+        return $this->service->indexProducts();
     }
 
     #[OA\Post(
@@ -95,7 +99,7 @@ class ProductController extends Controller
             'quantity' => 'required|integer|min:0',
         ]);
 
-        Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url'), $validated);
+        $this->service->storeProduct($validated);
     }
 
     #[OA\Get(
@@ -139,10 +143,7 @@ class ProductController extends Controller
     )]
     public function show()
     {
-        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
-        $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').'/'.$query);
-
-        return $response['data'];
+        return $this->service->getProduct();
     }
 
     #[OA\Put(
@@ -170,7 +171,7 @@ class ProductController extends Controller
                         new OA\Property(property: 'name', type: 'string', example: 'Produto A'),
                         new OA\Property(property: 'description', type: 'string', example: 'Produto A is really good'),
                         new OA\Property(property: 'amount', type: 'integer', example: 10000),
-                        new OA\Property(property: 'quantity', type: 'integer', example: 100)
+                        new OA\Property(property: 'quantity', type: 'integer', example: 100),
                     ]
                 )
             ),
@@ -198,8 +199,7 @@ class ProductController extends Controller
             'quantity' => 'sometimes|integer|min:0',
         ]);
 
-        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
-        Http::withHeaders(['accept' => 'application/json'])->put(config('api.product_api_url').$query, $validated);
+        return $this->service->updateProduct($validated);
     }
 
     #[OA\Delete(
@@ -242,11 +242,13 @@ class ProductController extends Controller
         return $response;
     }
 
-    public function stockUpdate(Request $request) {
-        // $this->authorize('update', Product::class);
+    public function stockUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'required|string',
+            'value' => 'required|int',
+        ]);
 
-        $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
-        Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url').'/'.$query, $request);
-        echo $query;
+        $this->service->updateProductStock($validated);
     }
 }
