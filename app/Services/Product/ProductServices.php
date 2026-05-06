@@ -27,7 +27,7 @@ class ProductServices
         }
         $response = Http::withHeaders(['accept' => 'application/json'])->get(config('api.product_api_url').'/'.$query);
 
-        return $response['data'];
+        return $response['data'] ?? $response;
     }
 
     public function updateProduct(array $validated)
@@ -38,9 +38,14 @@ class ProductServices
 
     public function updateProductStock(array $validated, $query = null)
     {
+        if (isset($query)) {
+            $query = 'stockUpdate/'.$query;
+        }
+
         if (is_null($query)) {
             $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
         }
+
         Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url').'/'.$query, $validated);
     }
 }

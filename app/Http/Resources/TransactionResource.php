@@ -22,6 +22,7 @@ class TransactionResource extends JsonResource
             'status'                 => $this->status,
             'amount'                 => $this->amount,
             'card_last_numbers'      => $this->card_last_numbers,
+            'order'                  => json_decode($this->order),
             'created_at'             => $this->created_at,
             'products'               => ProductTransactionResource::collection($this->whenLoaded('products')),
         ];

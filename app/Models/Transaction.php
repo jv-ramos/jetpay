@@ -13,6 +13,7 @@ class Transaction extends Model
         'status',
         'amount',
         'card_last_numbers',
+        'order',
     ];
 
     public function products()

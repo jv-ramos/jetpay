@@ -4,16 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\TransactionResource;
 use App\Models\Gateway;
-use App\Models\Product;
 use App\Models\Transaction;
 use App\Services\Gateway\GatewayFactory;
-use Illuminate\Http\Request;
+use App\Services\Product\ProductServices;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class TransactionController extends Controller
 {
     use AuthorizesRequests;
+
+    protected ProductServices $productService;
+
+    public function __construct(ProductServices $productService)
+    {
+        $this->productService = $productService;
+    }
 
     #[OA\Get(
         path: '/transactions',
@@ -42,7 +49,7 @@ class TransactionController extends Controller
                                     new OA\Property(property: 'created_at', type: 'string', format: 'date-time', example: '2024-01-01T00:00:00Z'),
                                 ]
                             )
-                        )
+                        ),
                     ]
                 )
             ),
@@ -52,6 +59,11 @@ class TransactionController extends Controller
     public function index()
     {
         return TransactionResource::collection(Transaction::paginate(10));
+    }
+
+    public function reserveOrReplenishProductStock(array $order, int $id)
+    {
+        $this->productService->updateProductStock($order, $id);
     }
 
     #[OA\Post(
@@ -88,59 +100,100 @@ class TransactionController extends Controller
                         ),
                     ]
                 )
-            )
+            ),
         ]
     )]
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'client_id'         => 'required|integer|exists:clients,id',
-            'name'              => 'required|string|max:255',
-            'email'             => 'required|email',
-            'card_number'       => 'required|string|size:16',
-            'cvv'               => 'required|string|min:3|max:4',
-            'cart'              => 'required|array|min:1',
-            'cart.*.product_id' => 'required|integer|exists:products,id',
-            'cart.*.quantity'   => 'required|integer|min:1',
+            'client_id' => 'required|integer|exists:clients,id',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'card_number' => 'required|string|size:16',
+            'cvv' => 'required|string|min:3|max:4',
+            'cart' => 'required|array|min:1',
+            'cart.*.product_id' => 'required|integer',
+            'cart.*.quantity' => 'required|integer|min:1',
         ]);
 
-        // Calculate total amount
-        $amount = collect($validated['cart'])->reduce(function ($total, $item) {
-            $product = Product::find($item['product_id']);
-            return $total + ($product->amount * $item['quantity']);
-        }, 0);
+        $reserveProduct = collect();
+
+        collect($validated['cart'])->sum(function ($item) use (&$reserveProduct) {
+            $product = $this->productService->getProduct($item['product_id']);
+            $order = ['operation' => false, 'quantity' => $item['quantity']];
+
+            $this->reserveOrReplenishProductStock($order, $item['product_id']);
+
+            $reserveInstance = collect([
+                'product_id' => $item['product_id'],
+                'name' => $product['name'],
+                'amount' => $product['amount'],
+                'quantity' => $item['quantity'],
+            ]);
+
+            $reserveProduct->push($reserveInstance);
+        });
+
+        $amountTotal = collect($reserveProduct)->reduce(function ($total, $item) {
+            if (is_float($item['amount'])) {
+                $item['amount'] = (int) ($item['amount'] * 100);
+            }
+            return $total + ($item['amount'] * $item['quantity']);
+        });
 
         // Process payment through the active gateway
         $numberOfTries = 1;
         $maxNumberOfTries = Gateway::where('is_active', true)->count();
         $selectedGateway = Gateway::where('is_active', true)->orderBy('priority')->first();
         $gatewayService = GatewayFactory::make($selectedGateway);
-        $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amount]));
-        while ($numberOfTries <= $maxNumberOfTries && !$gatewayResponse || !$gatewayResponse['status']) {
+        $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amountTotal]));
+        while ($numberOfTries <= $maxNumberOfTries && ! $gatewayResponse || ! $gatewayResponse['status']) {
             $selectedGateway = Gateway::where('is_active', true)->orderBy('priority')->skip($numberOfTries)->first();
             $gatewayService = GatewayFactory::make($selectedGateway);
-            $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amount]));
+            $gatewayResponse = $gatewayService->createTransaction(array_merge($validated, ['amount' => $amountTotal]));
             $numberOfTries++;
         }
 
+        if (! $gatewayResponse || ! $gatewayResponse['status']) {
+            $reserveProduct->map(function ($item) {
+                $replenish = [
+                    'operation' => true,
+                    'quantity' => $item['quantity'],
+                ];
+                $this->reserveOrReplenishProductStock($replenish, $item->get('product_id'));
+            });
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again later.',
+            ]);
+        }
+
+        $cart = collect($reserveProduct)->map(fn ($item) => [
+            'product_id' => $item['product_id'],
+            'name' => $item['name'],
+            'amount' => $item['amount'],
+            'quantity' => $item['quantity'],
+        ]);
+
         // Create transaction record
         $transaction = Transaction::create([
-            'client_id'         => $validated['client_id'],
-            'gateway_id'        => $selectedGateway->id,
-            'external_id'       => $gatewayResponse['id'],
-            'status'            => $gatewayResponse['status'],
-            'amount'            => $amount,
+            'client_id' => $validated['client_id'],
+            'gateway_id' => $selectedGateway->id,
+            'external_id' => $gatewayResponse['id'],
+            'status' => $gatewayResponse['status'],
+            'amount' => $amountTotal,
             'card_last_numbers' => substr($validated['card_number'], -4),
+            'order' => $cart->toJson(),
         ]);
 
         // Mount products cart
-        $cart = collect($validated['cart'])->mapWithKeys(fn($item) => [
-            $item['product_id'] => ['quantity' => $item['quantity']]
-        ]);
-
-        $transaction->products()->attach($cart);
-        $transaction->load('products'); // Eager load products for the response
-
+        // $cart = collect($validated['cart'])->mapWithKeys(fn ($item) => [
+        //     $item['product_id'] => ['quantity' => $item['quantity']],
+        // ]);
+        //
+        // $transaction->attach($cart);
+        // $transaction->load('products'); // Eager load products for the response
         return new TransactionResource($transaction);
     }
 
@@ -157,7 +210,7 @@ class TransactionController extends Controller
                 description: 'ID da transação',
                 required: true,
                 schema: new OA\Schema(type: 'integer')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -194,7 +247,8 @@ class TransactionController extends Controller
     )]
     public function show(Transaction $transaction)
     {
-        $transaction->load('products');
+        // $transaction->load('products');
+
         return new TransactionResource($transaction);
     }
 
@@ -211,7 +265,7 @@ class TransactionController extends Controller
                 description: 'ID da transação a ser estornada',
                 required: true,
                 schema: new OA\Schema(type: 'integer')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
