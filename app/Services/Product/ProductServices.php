@@ -4,7 +4,6 @@ namespace App\Services\Product;
 
 use Illuminate\Support\Facades\Http;
 
-
 class ProductServices
 {
     public function indexProducts(): array
@@ -46,6 +45,16 @@ class ProductServices
             $query = substr(url()->full(), strpos(url()->full(), 'products/') + strlen('products/'));
         }
 
-        Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url').'/'.$query, $validated);
+        $response = Http::withHeaders(['accept' => 'application/json'])->post(config('api.product_api_url').'/'.$query, $validated);
+        if ($response->failed()) {
+            $statusCode = $response->status();
+            $errorMessage = $response->json('message', 'Erro desconhecido');
+
+            throw new \Exception($errorMessage, $statusCode);
+        }
+
+        $data = $response->collect();
+
+        return $data;
     }
 }

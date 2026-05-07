@@ -245,10 +245,10 @@ class ProductController extends Controller
     public function stockUpdate(Request $request)
     {
         $validated = $request->validate([
-            'type' => 'required|string',
-            'value' => 'required|int',
+            'operation' => 'required|boolean',
+            'quantity' => 'required|int',
         ]);
 
-        $this->service->updateProductStock($validated);
+        return $this->service->updateProductStock($validated);
     }
 }
