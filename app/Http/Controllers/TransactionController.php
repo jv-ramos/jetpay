@@ -114,15 +114,23 @@ class TransactionController extends Controller
         $totalAmount = $this->transactionService
             ->calculateTotalAmount($productsCollection);
 
+        $processedGateway = $this->transactionService
+            ->processGateway(
+                $validated,
+                $totalAmount
+            );
         $transaction = $this->transactionService
-            ->selectGatewayAndProcessPayment(
+            ->processTransaction(
+                $processedGateway,
                 $productsCollection,
                 $validated,
                 $totalAmount
             );
+
         if (isset($transaction)) {
             return new TransactionResource($transaction);
         }
+
         return response()->json(
             [
                 'success' => false,
