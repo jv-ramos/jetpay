@@ -25,41 +25,22 @@ class TransactionServices
                 $this->releaseStock($reservedProducts);
             }
 
-            $cart = collect($reserveProduct)->map(fn($item) => [
-                'product_id' => $item['id'],
-                'name' => $item['name'],
-                'amount' => $item['amount'],
-                'quantity' => $item['quantity'],
-            ]);
+            $transaction = $this->registerTransaction(
+                $reservedProducts,
+                $validated,
+                $processedGateway,
+                $totalAmount
+            );
 
-            $transaction = Transaction::create([
-                'client_id' => $validated['client_id'],
-                'gateway_id' => $processedGateway['selected_gateway_id'],
-                'external_id' => $processedGateway['external_id'],
-                'status' => $processedGateway['status'],
-                'amount' => $totalAmount,
-                'card_last_numbers' => substr($validated['card_number'], -4),
-                'order' => $cart->toJson(),
-            ]);
             $this->checkTransactionStatusAndRefundIfNeeded($transaction->id);
             throw new \Exception($e->getMessage(), $e->getCode());
         }
-        $cart = collect($reservedProducts)->map(fn($item) => [
-            'product_id' => $item['id'],
-            'name' => $item['name'],
-            'amount' => $item['amount'],
-            'quantity' => $item['quantity'],
-        ]);
-
-        return Transaction::create([
-            'client_id' => $validated['client_id'],
-            'gateway_id' => $processedGateway['selected_gateway_id'],
-            'external_id' => $processedGateway['external_id'],
-            'status' => $processedGateway['status'],
-            'amount' => $totalAmount,
-            'card_last_numbers' => substr($validated['card_number'], -4),
-            'order' => $cart->toJson(),
-        ]);
+        return $this->registerTransaction(
+            $reservedProducts,
+            $validated,
+            $processedGateway,
+            $totalAmount
+        );
     }
 
     public function processGateway(array $validated, int $totalAmount)
@@ -80,20 +61,20 @@ class TransactionServices
             $selectedGateway = Gateway::where('is_active', true)
                 ->orderBy('priority')
                 ->skip($numberOfTries)
-                ->first();
+                ->first(); // Select the gateway and skip those already tried
 
             if (! $selectedGateway) {
                 $numberOfTries++;
                 continue;
             }
-
+            // Create the gateway service instance
             $gatewayService = GatewayFactory::make($selectedGateway);
 
             if (! $gatewayService) {
                 $numberOfTries++;
                 continue;
             }
-
+            // Attempt to create the transaction with the gateway
             $gatewayResponse = $gatewayService
                 ->createTransaction(array_merge(
                     $validated,
@@ -121,6 +102,26 @@ class TransactionServices
             'external_id' => $gatewayResponse['id'],
             'status' => $gatewayResponse['status'],
         ];
+    }
+
+    public function registerTransaction(Collection $reserveProduct, array $validated, array $processedGateway, int $totalAmount)
+    {
+        $cart = collect($reserveProduct)->map(fn($item) => [
+            'product_id' => $item['id'],
+            'name' => $item['name'],
+            'amount' => $item['amount'],
+            'quantity' => $item['quantity'],
+        ]);
+
+        return Transaction::create([
+            'client_id' => $validated['client_id'],
+            'gateway_id' => $processedGateway['selected_gateway_id'],
+            'external_id' => $processedGateway['external_id'],
+            'status' => $processedGateway['status'],
+            'amount' => $totalAmount,
+            'card_last_numbers' => substr($validated['card_number'], -4),
+            'order' => $cart->toJson(),
+        ]);
     }
 
     public function calculateTotalAmount(Collection $cart): int
