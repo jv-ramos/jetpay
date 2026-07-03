@@ -48,6 +48,7 @@ class GatewayTwoService implements GatewayInterface
         return [
             'id'     => $externalId,
             'status' => $detailedTransaction['status'],
+            // 'status' => 'pending', // only for testing purposes
         ];
     }
 

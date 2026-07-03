@@ -176,16 +176,21 @@ class TransactionServices
     public function checkStockAvailabilityAndReturnProductCollection(array $cart)
     {
         $collection = collect();
+        logger($cart);
         foreach ($cart as $item) {
+            logger($item);
             $product = $this->productService->getProduct($item['product_id']);
+            logger($product);
             if ($product['quantity'] < $item['quantity']) {
                 throw new \Exception(
                     "Only {$product['quantity']} {$product['name']} left in stock",
                     400
                 );
             }
-            $collection->push($product);
+            $collection->push(['id' => $product['id'], 'name' => $product['name'], 'description' => $product['description'], 'amount' => $product['amount'], 'quantity' => $item['quantity']]);
         }
+        logger('logger: '. $collection);
+
         return $collection;
     }
 

@@ -57,6 +57,7 @@ class GatewayOneService implements GatewayInterface
         return [
             'id' => $externalId,
             'status' => $detailedTransaction['status'],
+            // 'status' => 'pending', // only for testing purposes
         ];
     }
 
